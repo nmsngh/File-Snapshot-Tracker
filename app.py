@@ -5,6 +5,7 @@ from flask import Flask, flash, redirect, render_template, request, url_for
 from database import get_connection, init_db
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = "local-development-key"
 
 init_db()
 
