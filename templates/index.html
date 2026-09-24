@@ -15,5 +15,30 @@
     {% endwith %}
 
     <h2>Add a directory</h2>
+    <form action="/directories" method="post">
+    <label for="label">Label (optional)</label>
+    <input id="label" name="label" type="text" placeholder="My Documents">
+
+    <label for="path">Directory path</label>
+    <input id="path" name="path" type="text"
+           placeholder="/Users/your-name/Documents" required>
+
+    <button type="submit">Register directory</button>
+</form>
+
+<h2>Registered directories</h2>
+
+{% if directories %}
+    <ul>
+        {% for directory in directories %}
+            <li>
+                <strong>{{ directory["label"] or "Untitled directory" }}</strong><br>
+                {{ directory["path"] }}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No directories registered yet.</p>
+{% endif %}
 </body>
 </html>
