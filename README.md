@@ -4,6 +4,8 @@
 
 ```bash
 git clone https://github.com/nmsngh/File-Snapshot-Tracker.git
+```
+```bash
 cd File-Snapshot-Tracker
 ```
 
