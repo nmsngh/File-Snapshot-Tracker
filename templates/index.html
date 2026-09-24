@@ -6,6 +6,14 @@
 </head>
 <body>
     <h1>File Snapshot Tracker</h1>
-    <p>Flask is running.</p>
+    <p>Register a directory to track its future file changes.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <h2>Add a directory</h2>
 </body>
 </html>
