@@ -34,6 +34,10 @@
             <li>
                 <strong>{{ directory["label"] or "Untitled directory" }}</strong><br>
                 {{ directory["path"] }}
+                <form action="{{ url_for('scan_registered_directory', directory_id=directory['id']) }}"
+                    method="post">
+                    <button type="submit">Scan now</button>
+                </form>
             </li>
         {% endfor %}
     </ul>
