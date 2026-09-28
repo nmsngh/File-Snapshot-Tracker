@@ -1,3 +1,8 @@
+# AI assistance disclosure:
+# ChatGPT was used as a learning aid for explanation, debugging, and review.
+# The author adapted, tested, and verified the final implementation.
+
+
 from pathlib import Path
 import sqlite3
 

@@ -1,3 +1,7 @@
+// AI assistance disclosure:
+// ChatGPT was used as a learning aid for explanation, debugging, and review.
+// The author adapted, tested, and verified the final implementation.
+
 
 document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.querySelector("#change-search");

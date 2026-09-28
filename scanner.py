@@ -1,3 +1,8 @@
+# AI assistance disclosure:
+# ChatGPT was used as a learning aid for explanation, debugging, and review.
+# The author adapted, tested, and verified the final implementation.
+
+
 import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
