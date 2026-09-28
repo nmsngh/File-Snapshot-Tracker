@@ -10,44 +10,27 @@ def file_has_changed(previous, latest):
         or previous["modified_at"] != latest["modified_at"]
     )
 
-def compare_latest_snapshots(directory_id):
+
+def load_entries(connection, snapshot_id):
+    rows = connection.execute("""
+        SELECT relative_path, size_bytes, modified_at, sha256
+        FROM file_entries
+        WHERE snapshot_id = ?
+    """, (snapshot_id,)).fetchall()
+
+    return {
+        row["relative_path"]: dict(row)
+        for row in rows
+    }
+
+
+def compare_snapshots(previous_snapshot_id, latest_snapshot_id):
     connection = get_connection()
 
-    snapshots = connection.execute("""
-        SELECT id, scanned_at
-        FROM snapshots
-        WHERE directory_id = ?
-        ORDER BY id DESC
-        LIMIT 2
-    """, (directory_id,)).fetchall()
-
-    if len(snapshots) < 2:
-        connection.close()
-        return None
-
-    latest_snapshot = snapshots[0]
-    previous_snapshot = snapshots[1]
-
-    previous_entries = {
-        row["relative_path"]: dict(row)
-        for row in connection.execute("""
-            SELECT relative_path, size_bytes, modified_at, sha256
-            FROM file_entries
-            WHERE snapshot_id = ?
-        """, (previous_snapshot["id"],)).fetchall()
-    }
-
-    latest_entries = {
-        row["relative_path"]: dict(row)
-        for row in connection.execute("""
-            SELECT relative_path, size_bytes, modified_at, sha256
-            FROM file_entries
-            WHERE snapshot_id = ?
-        """, (latest_snapshot["id"],)).fetchall()
-    }
+    previous_entries = load_entries(connection, previous_snapshot_id)
+    latest_entries = load_entries(connection, latest_snapshot_id)
 
     connection.close()
-
 
     added = []
     deleted = []
@@ -95,9 +78,7 @@ def compare_latest_snapshots(directory_id):
     renamed_added_paths = set()
     renamed_deleted_paths = set()
 
-    matching_hashes = set(added_by_hash) & set(deleted_by_hash)
-
-    for file_hash in matching_hashes:
+    for file_hash in set(added_by_hash) & set(deleted_by_hash):
         for deleted_file, added_file in zip(
             deleted_by_hash[file_hash],
             added_by_hash[file_hash]
@@ -121,9 +102,33 @@ def compare_latest_snapshots(directory_id):
 
     changes.sort(key=lambda change: change["path"])
 
-    
+    return changes
+
+
+def compare_latest_snapshots(directory_id):
+    connection = get_connection()
+
+    snapshots = connection.execute("""
+        SELECT id, scanned_at
+        FROM snapshots
+        WHERE directory_id = ?
+        ORDER BY id DESC
+        LIMIT 2
+    """, (directory_id,)).fetchall()
+
+    connection.close()
+
+    if len(snapshots) < 2:
+        return None
+
+    latest_snapshot = snapshots[0]
+    previous_snapshot = snapshots[1]
+
     return {
         "previous_snapshot": dict(previous_snapshot),
         "latest_snapshot": dict(latest_snapshot),
-        "changes": changes
+        "changes": compare_snapshots(
+            previous_snapshot["id"],
+            latest_snapshot["id"]
+        )
     }

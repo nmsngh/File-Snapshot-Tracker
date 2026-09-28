@@ -1,12 +1,16 @@
 from pathlib import Path
 import sqlite3
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+import csv
+import json
+from io import StringIO
+
+from flask import Flask,  Response, flash, redirect, render_template, request, url_for
 from database import get_connection, init_db
 
 from scanner import scan_directory
 
-from comparison import compare_latest_snapshots
+from comparison import compare_latest_snapshots, compare_snapshots
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "local-development-key"
@@ -212,6 +216,145 @@ def delete_directory(directory_id):
         flash("Directory and its snapshot history were removed.", "success")
 
     return redirect(url_for("index"))
+
+
+def get_full_history(directory_id):
+    connection = get_connection()
+
+    directory = connection.execute("""
+        SELECT id, path, label
+        FROM watched_directories
+        WHERE id = ?
+    """, (directory_id,)).fetchone()
+
+    snapshots = connection.execute("""
+        SELECT id, scanned_at, file_count, total_size_bytes
+        FROM snapshots
+        WHERE directory_id = ?
+        ORDER BY id ASC
+    """, (directory_id,)).fetchall()
+
+    connection.close()
+
+    if directory is None:
+        return None, [], []
+
+    scan_history = [dict(snapshot) for snapshot in snapshots]
+    change_history = []
+
+    for previous, latest in zip(snapshots, snapshots[1:]):
+        changes = compare_snapshots(previous["id"], latest["id"])
+
+        for change in changes:
+            change_history.append({
+                "from_snapshot_id": previous["id"],
+                "from_scanned_at": previous["scanned_at"],
+                "to_snapshot_id": latest["id"],
+                "to_scanned_at": latest["scanned_at"],
+                "status": change["status"],
+                "old_path": change.get("old_path", ""),
+                "path": change["path"],
+                "size_bytes": change["size_bytes"]
+            })
+
+    return dict(directory), scan_history, change_history
+
+
+@app.route("/directories/<int:directory_id>/scan-history.csv")
+def export_scan_history_csv(directory_id):
+    directory, scan_history, _ = get_full_history(directory_id)
+
+    if directory is None:
+        flash("Directory not found.", "error")
+        return redirect(url_for("index"))
+
+    output = StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "snapshot_id",
+        "scanned_at",
+        "file_count",
+        "total_size_bytes"
+    ])
+
+    for snapshot in scan_history:
+        writer.writerow([
+            snapshot["id"],
+            snapshot["scanned_at"],
+            snapshot["file_count"],
+            snapshot["total_size_bytes"]
+        ])
+
+    return Response(
+        "\ufeff" + output.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": "attachment; filename=scan-history.csv"
+        }
+    )
+
+
+@app.route("/directories/<int:directory_id>/change-history.csv")
+def export_change_history_csv(directory_id):
+    directory, _, change_history = get_full_history(directory_id)
+
+    if directory is None:
+        flash("Directory not found.", "error")
+        return redirect(url_for("index"))
+
+    output = StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "from_scanned_at",
+        "to_scanned_at",
+        "status",
+        "old_path",
+        "path",
+        "size_bytes"
+    ])
+
+    for change in change_history:
+        writer.writerow([
+            change["from_scanned_at"],
+            change["to_scanned_at"],
+            change["status"],
+            change["old_path"],
+            change["path"],
+            change["size_bytes"]
+        ])
+
+    return Response(
+        "\ufeff" + output.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": "attachment; filename=change-history.csv"
+        }
+    )
+
+
+@app.route("/directories/<int:directory_id>/history.json")
+def export_full_history_json(directory_id):
+    directory, scan_history, change_history = get_full_history(directory_id)
+
+    if directory is None:
+        flash("Directory not found.", "error")
+        return redirect(url_for("index"))
+
+    export_data = {
+        "directory": directory,
+        "scan_history": scan_history,
+        "change_history": change_history
+    }
+
+    return Response(
+        json.dumps(export_data, ensure_ascii=False, indent=2),
+        mimetype="application/json",
+        headers={
+            "Content-Disposition": "attachment; filename=file-history.json"
+        }
+    )
 
 
 if __name__ == "__main__":
