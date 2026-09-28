@@ -552,7 +552,6 @@ def view_range_events(directory_id):
         end_snapshot["id"],
     )
 
-    print(f"Events found: {len(events)}")
 
     return render_template(
         "events.html",
