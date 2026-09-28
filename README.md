@@ -1,5 +1,13 @@
 # File Snapshot Tracker
 
+<p align="center">
+  <img
+    src="assets/001.png"
+    alt="File Snapshot Tracker project cover"
+    width="900"
+  >
+</p>
+
 
 #### Video Demo: ><><><
 
