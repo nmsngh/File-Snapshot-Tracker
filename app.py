@@ -142,5 +142,58 @@ def view_changes(directory_id):
     )
 
 
+@app.route("/directories/<int:directory_id>/history")
+def view_history(directory_id):
+    connection = get_connection()
+
+    directory = connection.execute("""
+        SELECT id, path, label
+        FROM watched_directories
+        WHERE id = ?
+    """, (directory_id,)).fetchone()
+
+    snapshots = connection.execute("""
+        SELECT id, scanned_at, file_count, total_size_bytes
+        FROM snapshots
+        WHERE directory_id = ?
+        ORDER BY id ASC
+    """, (directory_id,)).fetchall()
+
+    connection.close()
+
+    if directory is None:
+        flash("Directory not found.", "error")
+        return redirect(url_for("index"))
+
+    history = []
+    previous = None
+
+    for snapshot in snapshots:
+        item = dict(snapshot)
+
+        if previous is None:
+            item["file_count_change"] = None
+            item["size_change"] = None
+        else:
+            item["file_count_change"] = (
+                item["file_count"] - previous["file_count"]
+            )
+            item["size_change"] = (
+                item["total_size_bytes"] - previous["total_size_bytes"]
+            )
+
+        history.append(item)
+        previous = item
+
+    history.reverse()
+
+    return render_template(
+        "history.html",
+        directory=directory,
+        history=history
+    )
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)

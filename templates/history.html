@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scan History - File Snapshot Tracker</title>
+</head>
+<body>
+    <h1>Scan History</h1>
+
+    <p>
+        <strong>{{ directory["label"] or "Untitled directory" }}</strong><br>
+        {{ directory["path"] }}
+    </p>
+
+    {% if history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Scanned at</th>
+                    <th>Files</th>
+                    <th>File change</th>
+                    <th>Total size (bytes)</th>
+                    <th>Size change (bytes)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for snapshot in history %}
+                    <tr>
+                        <td>{{ snapshot["scanned_at"] }}</td>
+                        <td>{{ snapshot["file_count"] }}</td>
+                        <td>
+                            {% if snapshot["file_count_change"] is none %}
+                                —
+                            {% else %}
+                                {{ snapshot["file_count_change"] }}
+                            {% endif %}
+                        </td>
+                        <td>{{ snapshot["total_size_bytes"] }}</td>
+                        <td>
+                            {% if snapshot["size_change"] is none %}
+                                —
+                            {% else %}
+                                {{ snapshot["size_change"] }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No snapshots have been created yet.</p>
+    {% endif %}
+
+    <p><a href="{{ url_for('index') }}">Back to directories</a></p>
+</body>
+</html>

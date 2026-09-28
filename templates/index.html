@@ -41,6 +41,10 @@
                 <a href="{{ url_for('view_changes', directory_id=directory['id']) }}">
                     View latest changes
                 </a>
+                <br>
+                <a href="{{ url_for('view_history', directory_id=directory['id']) }}">
+                    View scan history
+                </a>
             </li>
         {% endfor %}
     </ul>
