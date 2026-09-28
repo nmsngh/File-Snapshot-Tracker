@@ -517,17 +517,6 @@ def select_snapshot_comparison(directory_id):
 
 @app.route("/directories/<int:directory_id>/events")
 def view_range_events(directory_id):
-    start_snapshot_id = request.args.get("previous_snapshot_id", type=int)
-    end_snapshot_id = request.args.get("latest_snapshot_id", type=int)
-
-    if start_snapshot_id is None or end_snapshot_id is None:
-        flash("Please select two snapshots.", "error")
-        return redirect(url_for("view_history", directory_id=directory_id))
-
-    if start_snapshot_id >= end_snapshot_id:
-        flash("Select an earlier snapshot first, then a later snapshot.", "error")
-        return redirect(url_for("view_history", directory_id=directory_id))
-
     connection = get_connection()
 
     directory = connection.execute(
@@ -535,33 +524,35 @@ def view_range_events(directory_id):
         (directory_id,),
     ).fetchone()
 
-    start_snapshot = connection.execute(
+    snapshots = connection.execute(
         """
         SELECT * FROM snapshots
-        WHERE id = ? AND directory_id = ?
+        WHERE directory_id = ?
+        ORDER BY id ASC
         """,
-        (start_snapshot_id, directory_id),
-    ).fetchone()
-
-    end_snapshot = connection.execute(
-        """
-        SELECT * FROM snapshots
-        WHERE id = ? AND directory_id = ?
-        """,
-        (end_snapshot_id, directory_id),
-    ).fetchone()
+        (directory_id,),
+    ).fetchall()
 
     connection.close()
 
-    if directory is None or start_snapshot is None or end_snapshot is None:
-        flash("That snapshot selection is not valid.", "error")
+    if directory is None:
+        flash("Directory not found.", "error")
         return redirect(url_for("index"))
+
+    if len(snapshots) < 2:
+        flash("At least two snapshots are needed to view events.", "error")
+        return redirect(url_for("view_history", directory_id=directory_id))
+
+    start_snapshot = snapshots[0]
+    end_snapshot = snapshots[-1]
 
     events = get_range_events(
         directory_id,
-        start_snapshot_id,
-        end_snapshot_id,
+        start_snapshot["id"],
+        end_snapshot["id"],
     )
+
+    print(f"Events found: {len(events)}")
 
     return render_template(
         "events.html",

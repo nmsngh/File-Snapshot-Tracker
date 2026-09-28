@@ -24,7 +24,6 @@
 {% if history|length >= 2 %}
     <section class="card comparison-form">
         <h2>Compare selected snapshots</h2>
-
         <form action="{{ url_for('select_snapshot_comparison', directory_id=directory['id']) }}"
               method="get">
             <div class="field">
@@ -54,11 +53,14 @@
             <button type="submit" name="mode" value="comparison">
                 Compare final states
             </button>
-            <button type="submit" name="mode" value="events" class="button button-secondary">
-                View all events in range
-            </button>
         </form>
     </section>
+        <p>
+            <a class="button button-secondary"
+            href="{{ url_for('view_range_events', directory_id=directory['id']) }}">
+                View all recorded events
+            </a>
+        </p>
 {% endif %}
 
 
