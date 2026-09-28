@@ -142,7 +142,9 @@ def view_changes(directory_id):
     return render_template(
         "changes.html",
         directory=directory,
-        comparison=comparison
+        comparison=comparison,
+        comparison_title="Latest changes",
+        comparison_description="Changes detected between the two most recent snapshots."
     )
 
 
@@ -174,6 +176,9 @@ def view_history(directory_id):
 
     for snapshot in snapshots:
         item = dict(snapshot)
+        item["previous_snapshot_id"] = (
+            previous["id"] if previous is not None else None
+        )
 
         if previous is None:
             item["file_count_change"] = None
@@ -355,6 +360,68 @@ def export_full_history_json(directory_id):
             "Content-Disposition": "attachment; filename=file-history.json"
         }
     )
+
+
+
+@app.route(
+    "/directories/<int:directory_id>/compare/"
+    "<int:previous_snapshot_id>/<int:latest_snapshot_id>"
+)
+def view_historical_comparison(
+    directory_id,
+    previous_snapshot_id,
+    latest_snapshot_id
+):
+    connection = get_connection()
+
+    directory = connection.execute("""
+        SELECT id, path, label
+        FROM watched_directories
+        WHERE id = ?
+    """, (directory_id,)).fetchone()
+
+    previous_snapshot = connection.execute("""
+        SELECT id, scanned_at
+        FROM snapshots
+        WHERE id = ? AND directory_id = ?
+    """, (previous_snapshot_id, directory_id)).fetchone()
+
+    latest_snapshot = connection.execute("""
+        SELECT id, scanned_at
+        FROM snapshots
+        WHERE id = ? AND directory_id = ?
+    """, (latest_snapshot_id, directory_id)).fetchone()
+
+    connection.close()
+
+    if (
+        directory is None
+        or previous_snapshot is None
+        or latest_snapshot is None
+        or previous_snapshot["id"] >= latest_snapshot["id"]
+    ):
+        flash("Invalid snapshot comparison.", "error")
+        return redirect(url_for("view_history", directory_id=directory_id))
+
+    comparison = {
+        "previous_snapshot": dict(previous_snapshot),
+        "latest_snapshot": dict(latest_snapshot),
+        "changes": compare_snapshots(
+            previous_snapshot_id,
+            latest_snapshot_id
+        )
+    }
+
+    return render_template(
+        "changes.html",
+        directory=directory,
+        comparison=comparison,
+        comparison_title="Historical comparison",
+        comparison_description=(
+            "Changes detected between the selected consecutive snapshots."
+        )
+    )
+
 
 
 if __name__ == "__main__":

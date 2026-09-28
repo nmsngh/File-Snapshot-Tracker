@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 
-{% block title %}Latest Changes - File Snapshot Tracker{% endblock %}
+{% block title %}{{ comparison_title }} - File Snapshot Tracker{% endblock %}
 
 {% block main %}
 <section class="page-heading page-heading-row">
     <div>
         <p class="eyebrow">Comparison</p>
-        <h1>Latest changes</h1>
-        <p class="muted">Changes detected between the two most recent snapshots.</p>
+        <h1>{{ comparison_title }}</h1>
+        <p class="muted">{{ comparison_description }}</p>
     </div>
 
     <a class="button button-secondary" href="{{ url_for('index') }}">
@@ -26,6 +26,24 @@
 
 <section class="section-heading">
     <h2>{{ comparison["changes"]|length }} detected changes</h2>
+
+    {% if comparison["changes"] %}
+        <div class="filters">
+            <input id="change-search"
+                   type="search"
+                   placeholder="Search file path">
+
+            <select id="status-filter">
+                <option value="all">All statuses</option>
+                <option value="added">Added</option>
+                <option value="modified">Modified</option>
+                <option value="deleted">Deleted</option>
+                <option value="renamed">Renamed</option>
+            </select>
+        </div>
+
+        <p id="filter-result" class="muted"></p>
+    {% endif %}
 </section>
 
 {% if comparison["changes"] %}
@@ -39,8 +57,10 @@
                 </tr>
             </thead>
             <tbody>
-                {% for change in comparison["changes"] %}
-                    <tr>
+{% for change in comparison["changes"] %}
+    <tr data-change-row
+        data-status="{{ change['status']|lower }}"
+        data-path="{% if change['status'] == 'Renamed' %}{{ change['old_path'] }} {{ change['path'] }}{% else %}{{ change['path'] }}{% endif %}">
                         <td>
                             <span class="status status-{{ change["status"]|lower }}">
                                 {{ change["status"] }}

@@ -30,6 +30,7 @@
                     <th>File change</th>
                     <th>Total size (bytes)</th>
                     <th>Size change (bytes)</th>
+                    <th>Changes</th>
                 </tr>
             </thead>
             <tbody>
@@ -50,6 +51,21 @@
                                 —
                             {% else %}
                                 {{ snapshot["size_change"] }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if snapshot["previous_snapshot_id"] %}
+                                <a class="button button-secondary"
+                                href="{{ url_for(
+                                    'view_historical_comparison',
+                                    directory_id=directory['id'],
+                                    previous_snapshot_id=snapshot['previous_snapshot_id'],
+                                    latest_snapshot_id=snapshot['id']
+                                ) }}">
+                                    View changes
+                                </a>
+                            {% else %}
+                                First snapshot
                             {% endif %}
                         </td>
                     </tr>

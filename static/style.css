@@ -317,3 +317,27 @@ tr:last-child td {
         flex-direction: column;
     }
 }
+
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.filters input,
+.filters select {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    padding: 0.65rem 0.75rem;
+}
+
+.filters input {
+    flex: 1 1 240px;
+}
+
+.filters select {
+    background: white;
+}
