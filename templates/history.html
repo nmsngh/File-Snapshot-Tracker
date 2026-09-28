@@ -20,6 +20,48 @@
     <p class="directory-path">{{ directory["path"] }}</p>
 </section>
 
+
+{% if history|length >= 2 %}
+    <section class="card comparison-form">
+        <h2>Compare selected snapshots</h2>
+
+        <form action="{{ url_for('select_snapshot_comparison', directory_id=directory['id']) }}"
+              method="get">
+            <div class="field">
+                <label for="previous-snapshot">Earlier snapshot</label>
+                <select id="previous-snapshot" name="previous_snapshot_id" required>
+                    {% for snapshot in history|reverse %}
+                        <option value="{{ snapshot['id'] }}"
+                                {% if loop.first %}selected{% endif %}>
+                            #{{ snapshot["id"] }} — {{ snapshot["scanned_at"]|localtime }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="latest-snapshot">Later snapshot</label>
+                <select id="latest-snapshot" name="latest_snapshot_id" required>
+                    {% for snapshot in history|reverse %}
+                        <option value="{{ snapshot['id'] }}"
+                                {% if loop.last %}selected{% endif %}>
+                            #{{ snapshot["id"] }} — {{ snapshot["scanned_at"]|localtime }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" name="mode" value="comparison">
+                Compare final states
+            </button>
+            <button type="submit" name="mode" value="events" class="button button-secondary">
+                View all events in range
+            </button>
+        </form>
+    </section>
+{% endif %}
+
+
 {% if history %}
     <div class="table-wrap">
         <table>
@@ -36,7 +78,7 @@
             <tbody>
                 {% for snapshot in history %}
                     <tr>
-                        <td>{{ snapshot["scanned_at"] }}</td>
+                        <td>{{ snapshot["scanned_at"]|localtime }}</td>
                         <td>{{ snapshot["file_count"] }}</td>
                         <td>
                             {% if snapshot["file_count_change"] is none %}

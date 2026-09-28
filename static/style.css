@@ -341,3 +341,30 @@ tr:last-child td {
 .filters select {
     background: white;
 }
+
+
+.comparison-form {
+    margin-bottom: 1.5rem;
+}
+
+.comparison-form form {
+    align-items: end;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr 1fr auto;
+}
+
+.comparison-form select {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    padding: 0.7rem 0.8rem;
+    width: 100%;
+}
+
+@media (max-width: 760px) {
+    .comparison-form form {
+        grid-template-columns: 1fr;
+    }
+}

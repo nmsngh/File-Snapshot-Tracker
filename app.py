@@ -7,12 +7,27 @@ from io import StringIO
 
 from flask import Flask,  Response, flash, redirect, render_template, request, url_for
 from database import get_connection, init_db
+from datetime import datetime, timezone
 
 from scanner import scan_directory
 
 from comparison import compare_latest_snapshots, compare_snapshots
 
 app = Flask(__name__)
+
+
+@app.template_filter("localtime")
+def localtime(value):
+    parsed = datetime.fromisoformat(value)
+
+    # 기존 SQLite 기록은 UTC 시간인데 시간대 정보가 없으므로 UTC로 해석
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+
+    return parsed.astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
+
+
+
 app.config["SECRET_KEY"] = "local-development-key"
 
 init_db()
@@ -88,10 +103,15 @@ def scan_registered_directory(directory_id):
 
     total_size = sum(entry["size_bytes"] for entry in entries)
 
-    cursor = connection.execute("""
-        INSERT INTO snapshots (directory_id, file_count, total_size_bytes)
-        VALUES (?, ?, ?)
-    """, (directory_id, len(entries), total_size))
+    scanned_at = datetime.now().astimezone().isoformat(timespec="seconds")
+
+    cursor = connection.execute(
+        """
+        INSERT INTO snapshots (directory_id, scanned_at, file_count, total_size_bytes)
+        VALUES (?, ?, ?, ?)
+        """,
+        (directory_id, scanned_at, len(entries), total_size),
+    )
 
     snapshot_id = cursor.lastrowid
 
@@ -265,6 +285,42 @@ def get_full_history(directory_id):
     return dict(directory), scan_history, change_history
 
 
+def get_range_events(directory_id, start_snapshot_id, end_snapshot_id):
+    connection = get_connection()
+
+    snapshots = connection.execute(
+        """
+        SELECT id, scanned_at
+        FROM snapshots
+        WHERE directory_id = ?
+          AND id >= ?
+          AND id <= ?
+        ORDER BY id ASC
+        """,
+        (directory_id, start_snapshot_id, end_snapshot_id),
+    ).fetchall()
+
+    connection.close()
+
+    events = []
+
+    for previous_snapshot, latest_snapshot in zip(snapshots, snapshots[1:]):
+        changes = compare_snapshots(
+            previous_snapshot["id"],
+            latest_snapshot["id"],
+        )
+
+        for change in changes:
+            event = dict(change)
+            event["from_scanned_at"] = previous_snapshot["scanned_at"]
+            event["to_scanned_at"] = latest_snapshot["scanned_at"]
+            events.append(event)
+
+    return events
+
+
+
+
 @app.route("/directories/<int:directory_id>/scan-history.csv")
 def export_scan_history_csv(directory_id):
     directory, scan_history, _ = get_full_history(directory_id)
@@ -421,6 +477,100 @@ def view_historical_comparison(
             "Changes detected between the selected consecutive snapshots."
         )
     )
+
+@app.route("/directories/<int:directory_id>/compare")
+def select_snapshot_comparison(directory_id):
+    previous_snapshot_id = request.args.get(
+        "previous_snapshot_id",
+        type=int
+    )
+    latest_snapshot_id = request.args.get(
+        "latest_snapshot_id",
+        type=int
+    )
+
+    if previous_snapshot_id is None or latest_snapshot_id is None:
+        flash("Please select two snapshots.", "error")
+        return redirect(url_for("view_history", directory_id=directory_id))
+
+    mode = request.args.get("mode", "comparison")
+
+    if mode == "events":
+        return redirect(
+            url_for(
+                "view_range_events",
+                directory_id=directory_id,
+                previous_snapshot_id=previous_snapshot_id,
+                latest_snapshot_id=latest_snapshot_id,
+            )
+        )
+
+    return redirect(
+        url_for(
+            "view_historical_comparison",
+            directory_id=directory_id,
+            previous_snapshot_id=previous_snapshot_id,
+            latest_snapshot_id=latest_snapshot_id,
+        )
+    )
+
+
+@app.route("/directories/<int:directory_id>/events")
+def view_range_events(directory_id):
+    start_snapshot_id = request.args.get("previous_snapshot_id", type=int)
+    end_snapshot_id = request.args.get("latest_snapshot_id", type=int)
+
+    if start_snapshot_id is None or end_snapshot_id is None:
+        flash("Please select two snapshots.", "error")
+        return redirect(url_for("view_history", directory_id=directory_id))
+
+    if start_snapshot_id >= end_snapshot_id:
+        flash("Select an earlier snapshot first, then a later snapshot.", "error")
+        return redirect(url_for("view_history", directory_id=directory_id))
+
+    connection = get_connection()
+
+    directory = connection.execute(
+        "SELECT * FROM watched_directories WHERE id = ?",
+        (directory_id,),
+    ).fetchone()
+
+    start_snapshot = connection.execute(
+        """
+        SELECT * FROM snapshots
+        WHERE id = ? AND directory_id = ?
+        """,
+        (start_snapshot_id, directory_id),
+    ).fetchone()
+
+    end_snapshot = connection.execute(
+        """
+        SELECT * FROM snapshots
+        WHERE id = ? AND directory_id = ?
+        """,
+        (end_snapshot_id, directory_id),
+    ).fetchone()
+
+    connection.close()
+
+    if directory is None or start_snapshot is None or end_snapshot is None:
+        flash("That snapshot selection is not valid.", "error")
+        return redirect(url_for("index"))
+
+    events = get_range_events(
+        directory_id,
+        start_snapshot_id,
+        end_snapshot_id,
+    )
+
+    return render_template(
+        "events.html",
+        directory=directory,
+        start_snapshot=start_snapshot,
+        end_snapshot=end_snapshot,
+        events=events,
+    )
+
 
 
 

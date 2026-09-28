@@ -19,8 +19,8 @@
     <strong>{{ directory["label"] or "Untitled directory" }}</strong>
     <p class="directory-path">{{ directory["path"] }}</p>
     <p class="muted">
-        {{ comparison["previous_snapshot"]["scanned_at"] }}
-        → {{ comparison["latest_snapshot"]["scanned_at"] }}
+        {{ comparison["previous_snapshot"]["scanned_at"]|localtime }}
+        → {{ comparison["latest_snapshot"]["scanned_at"]|localtime }}
     </p>
 </section>
 

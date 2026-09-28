@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+
+{% block title %}Event Timeline - File Snapshot Tracker{% endblock %}
+
+{% block main %}
+<section class="page-heading page-heading-row">
+    <div>
+        <p class="eyebrow">Event timeline</p>
+        <h1>All changes in selected range</h1>
+        <p class="muted">
+            Every change detected between consecutive scans.
+        </p>
+    </div>
+
+    <a class="button button-secondary"
+       href="{{ url_for('view_history', directory_id=directory['id']) }}">
+        Back to history
+    </a>
+</section>
+
+<section class="card directory-summary">
+    <strong>{{ directory["label"] or "Untitled directory" }}</strong>
+    <p class="directory-path">{{ directory["path"] }}</p>
+    <p class="muted">
+        {{ start_snapshot["scanned_at"]|localtime }}
+        →
+        {{ end_snapshot["scanned_at"]|localtime }}
+    </p>
+</section>
+
+{% if events %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Detected between scans</th>
+                    <th>Status</th>
+                    <th>File path</th>
+                    <th>Size (bytes)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                    <tr>
+                        <td>
+                            {{ event["from_scanned_at"]|localtime }}
+                            <br>
+                            →
+                            <br>
+                            {{ event["to_scanned_at"]|localtime }}
+                        </td>
+                        <td>
+                            <span class="status status-{{ event['status']|lower }}">
+                                {{ event["status"] }}
+                            </span>
+                        </td>
+                        <td class="path-cell">
+                            {% if event["status"] == "Renamed" %}
+                                {{ event["old_path"] }} → {{ event["path"] }}
+                            {% else %}
+                                {{ event["path"] }}
+                            {% endif %}
+                        </td>
+                        <td>{{ event["size_bytes"] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <section class="empty-state">
+        <h3>No changes in this range</h3>
+        <p>No file events were detected between the selected scans.</p>
+    </section>
+{% endif %}
+{% endblock %}
