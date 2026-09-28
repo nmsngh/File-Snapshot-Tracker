@@ -1,18 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Scan History - File Snapshot Tracker</title>
-</head>
-<body>
-    <h1>Scan History</h1>
+{% extends "layout.html" %}
 
-    <p>
-        <strong>{{ directory["label"] or "Untitled directory" }}</strong><br>
-        {{ directory["path"] }}
-    </p>
+{% block title %}Scan History - File Snapshot Tracker{% endblock %}
 
-    {% if history %}
+{% block main %}
+<section class="page-heading page-heading-row">
+    <div>
+        <p class="eyebrow">History</p>
+        <h1>Scan history</h1>
+        <p class="muted">Snapshot records for this directory.</p>
+    </div>
+
+    <a class="button button-secondary" href="{{ url_for('index') }}">
+        Back to dashboard
+    </a>
+</section>
+
+<section class="card directory-summary">
+    <strong>{{ directory["label"] or "Untitled directory" }}</strong>
+    <p class="directory-path">{{ directory["path"] }}</p>
+</section>
+
+{% if history %}
+    <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -47,10 +56,11 @@
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p>No snapshots have been created yet.</p>
-    {% endif %}
-
-    <p><a href="{{ url_for('index') }}">Back to directories</a></p>
-</body>
-</html>
+    </div>
+{% else %}
+    <section class="empty-state">
+        <h3>No snapshots yet</h3>
+        <p>Run a scan from the dashboard to create the first snapshot.</p>
+    </section>
+{% endif %}
+{% endblock %}

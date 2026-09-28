@@ -1,60 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>File Snapshot Tracker</title>
-</head>
-<body>
-    <h1>File Snapshot Tracker</h1>
-    <p>Register a directory to track its future file changes.</p>
+{% extends "layout.html" %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endwith %}
+{% block title %}Dashboard - File Snapshot Tracker{% endblock %}
 
+{% block main %}
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Dashboard</p>
+        <h1>Track local file changes</h1>
+        <p class="muted">
+            Register a directory, create snapshots, and inspect filesystem changes.
+        </p>
+    </div>
+</section>
+
+<section class="card">
     <h2>Add a directory</h2>
-    <form action="/directories" method="post">
-    <label for="label">Label (optional)</label>
-    <input id="label" name="label" type="text" placeholder="My Documents">
 
-    <label for="path">Directory path</label>
-    <input id="path" name="path" type="text"
-           placeholder="/Users/your-name/Documents" required>
+    <form action="{{ url_for('add_directory') }}" method="post" class="directory-form">
+        <div class="field">
+            <label for="label">Label <span>(optional)</span></label>
+            <input id="label" name="label" type="text" placeholder="Course materials">
+        </div>
 
-    <button type="submit">Register directory</button>
-</form>
+        <div class="field field-wide">
+            <label for="path">Directory path</label>
+            <input id="path" name="path" type="text"
+                   placeholder="/Users/your-name/Documents" required>
+        </div>
 
-<h2>Registered directories</h2>
+        <button class="button button-primary" type="submit">
+            Register directory
+        </button>
+    </form>
+</section>
+
+<section class="section-heading">
+    <h2>Registered directories</h2>
+</section>
 
 {% if directories %}
-    <ul>
+    <div class="directory-grid">
         {% for directory in directories %}
-            <li>
-                <strong>{{ directory["label"] or "Untitled directory" }}</strong><br>
-                {{ directory["path"] }}
-                <form action="{{ url_for('scan_registered_directory', directory_id=directory['id']) }}"
-                    method="post">
-                    <button type="submit">Scan now</button>
-                </form>
-                <a href="{{ url_for('view_changes', directory_id=directory['id']) }}">
-                    View latest changes
-                </a>
-                <br>
-                <a href="{{ url_for('view_history', directory_id=directory['id']) }}">
-                    View scan history
-                </a>
-                <form action="{{ url_for('delete_directory', directory_id=directory['id']) }}"
-                    method="post"
-                    onsubmit="return confirm('Remove this directory and all of its snapshot history?')">
-                    <button type="submit">Remove directory</button>
-                </form>
-            </li>
+            <article class="directory-card">
+                <p class="directory-label">
+                    {{ directory["label"] or "Untitled directory" }}
+                </p>
+
+                <p class="directory-path">{{ directory["path"] }}</p>
+
+                <div class="actions">
+                    <form action="{{ url_for('scan_registered_directory', directory_id=directory['id']) }}"
+                          method="post">
+                        <button class="button button-primary" type="submit">
+                            Scan now
+                        </button>
+                    </form>
+
+                    <a class="button button-secondary"
+                       href="{{ url_for('view_changes', directory_id=directory['id']) }}">
+                        Latest changes
+                    </a>
+
+                    <a class="button button-secondary"
+                       href="{{ url_for('view_history', directory_id=directory['id']) }}">
+                        Scan history
+                    </a>
+
+                    <form action="{{ url_for('delete_directory', directory_id=directory['id']) }}"
+                          method="post"
+                          onsubmit="return confirm('Remove this directory and all of its snapshot history?')">
+                        <button class="button button-danger" type="submit">
+                            Remove
+                        </button>
+                    </form>
+                </div>
+            </article>
         {% endfor %}
-    </ul>
+    </div>
 {% else %}
-    <p>No directories registered yet.</p>
+    <section class="empty-state">
+        <h3>No directories registered</h3>
+        <p>Register a local folder above to start tracking file changes.</p>
+    </section>
 {% endif %}
-</body>
-</html>
+{% endblock %}

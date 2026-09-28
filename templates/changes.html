@@ -1,25 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Latest Changes - File Snapshot Tracker</title>
-</head>
-<body>
-    <h1>Latest Changes</h1>
+{% extends "layout.html" %}
 
-    <p>
-        <strong>{{ directory["label"] or "Untitled directory" }}</strong><br>
-        {{ directory["path"] }}
-    </p>
+{% block title %}Latest Changes - File Snapshot Tracker{% endblock %}
 
-    <p>
-        Comparing snapshots from
+{% block main %}
+<section class="page-heading page-heading-row">
+    <div>
+        <p class="eyebrow">Comparison</p>
+        <h1>Latest changes</h1>
+        <p class="muted">Changes detected between the two most recent snapshots.</p>
+    </div>
+
+    <a class="button button-secondary" href="{{ url_for('index') }}">
+        Back to dashboard
+    </a>
+</section>
+
+<section class="card directory-summary">
+    <strong>{{ directory["label"] or "Untitled directory" }}</strong>
+    <p class="directory-path">{{ directory["path"] }}</p>
+    <p class="muted">
         {{ comparison["previous_snapshot"]["scanned_at"] }}
-        to
-        {{ comparison["latest_snapshot"]["scanned_at"] }}.
+        → {{ comparison["latest_snapshot"]["scanned_at"] }}
     </p>
+</section>
 
-    {% if comparison["changes"] %}
+<section class="section-heading">
+    <h2>{{ comparison["changes"]|length }} detected changes</h2>
+</section>
+
+{% if comparison["changes"] %}
+    <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -31,8 +41,12 @@
             <tbody>
                 {% for change in comparison["changes"] %}
                     <tr>
-                        <td>{{ change["status"] }}</td>
                         <td>
+                            <span class="status status-{{ change["status"]|lower }}">
+                                {{ change["status"] }}
+                            </span>
+                        </td>
+                        <td class="path-cell">
                             {% if change["status"] == "Renamed" %}
                                 {{ change["old_path"] }} → {{ change["path"] }}
                             {% else %}
@@ -44,23 +58,31 @@
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p>No file changes were detected.</p>
-    {% endif %}
+    </div>
+{% else %}
+    <section class="empty-state">
+        <h3>No file changes detected</h3>
+        <p>The latest snapshot matches the previous one.</p>
+    </section>
+{% endif %}
 
-    <p><a href="{{ url_for('index') }}">Back to directories</a></p>
-    <p>
-        <a href="{{ url_for('export_scan_history_csv', directory_id=directory['id']) }}">
-            Download scan history CSV
+<section class="card export-card">
+    <h2>Download history</h2>
+    <div class="actions">
+        <a class="button button-secondary"
+           href="{{ url_for('export_scan_history_csv', directory_id=directory['id']) }}">
+            Scan history CSV
         </a>
-        <br>
-        <a href="{{ url_for('export_change_history_csv', directory_id=directory['id']) }}">
-            Download full change history CSV
+
+        <a class="button button-secondary"
+           href="{{ url_for('export_change_history_csv', directory_id=directory['id']) }}">
+            Full change history CSV
         </a>
-        <br>
-        <a href="{{ url_for('export_full_history_json', directory_id=directory['id']) }}">
-            Download complete history JSON
+
+        <a class="button button-secondary"
+           href="{{ url_for('export_full_history_json', directory_id=directory['id']) }}">
+            Complete history JSON
         </a>
-    </p>    
-</body>
-</html>
+    </div>
+</section>
+{% endblock %}
