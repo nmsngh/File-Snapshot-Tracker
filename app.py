@@ -194,6 +194,25 @@ def view_history(directory_id):
     )
 
 
+@app.route("/directories/<int:directory_id>/delete", methods=["POST"])
+def delete_directory(directory_id):
+    connection = get_connection()
+
+    cursor = connection.execute(
+        "DELETE FROM watched_directories WHERE id = ?",
+        (directory_id,)
+    )
+
+    connection.commit()
+    connection.close()
+
+    if cursor.rowcount == 0:
+        flash("Directory not found.", "error")
+    else:
+        flash("Directory and its snapshot history were removed.", "success")
+
+    return redirect(url_for("index"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)
