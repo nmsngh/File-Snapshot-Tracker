@@ -6,6 +6,8 @@ from database import get_connection, init_db
 
 from scanner import scan_directory
 
+from comparison import compare_latest_snapshots
+
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "local-development-key"
 
@@ -109,6 +111,35 @@ def scan_registered_directory(directory_id):
 
     flash(f"Snapshot saved: {len(entries)} files scanned.", "success")
     return redirect(url_for("index"))
+
+
+@app.route("/directories/<int:directory_id>/changes")
+def view_changes(directory_id):
+    connection = get_connection()
+
+    directory = connection.execute("""
+        SELECT id, path, label
+        FROM watched_directories
+        WHERE id = ?
+    """, (directory_id,)).fetchone()
+
+    connection.close()
+
+    if directory is None:
+        flash("Directory not found.", "error")
+        return redirect(url_for("index"))
+
+    comparison = compare_latest_snapshots(directory_id)
+
+    if comparison is None:
+        flash("At least two snapshots are required for comparison.", "error")
+        return redirect(url_for("index"))
+
+    return render_template(
+        "changes.html",
+        directory=directory,
+        comparison=comparison
+    )
 
 
 if __name__ == "__main__":

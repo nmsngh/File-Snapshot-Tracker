@@ -38,6 +38,9 @@
                     method="post">
                     <button type="submit">Scan now</button>
                 </form>
+                <a href="{{ url_for('view_changes', directory_id=directory['id']) }}">
+                    View latest changes
+                </a>
             </li>
         {% endfor %}
     </ul>

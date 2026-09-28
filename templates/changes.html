@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Latest Changes - File Snapshot Tracker</title>
+</head>
+<body>
+    <h1>Latest Changes</h1>
+
+    <p>
+        <strong>{{ directory["label"] or "Untitled directory" }}</strong><br>
+        {{ directory["path"] }}
+    </p>
+
+    <p>
+        Comparing snapshots from
+        {{ comparison["previous_snapshot"]["scanned_at"] }}
+        to
+        {{ comparison["latest_snapshot"]["scanned_at"] }}.
+    </p>
+
+    {% if comparison["changes"] %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>File path</th>
+                    <th>Size (bytes)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for change in comparison["changes"] %}
+                    <tr>
+                        <td>{{ change["status"] }}</td>
+                        <td>{{ change["path"] }}</td>
+                        <td>{{ change["size_bytes"] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No file changes were detected.</p>
+    {% endif %}
+
+    <p><a href="{{ url_for('index') }}">Back to directories</a></p>
+</body>
+</html>
