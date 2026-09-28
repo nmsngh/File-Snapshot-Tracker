@@ -1,6 +1,9 @@
 # File Snapshot Tracker
 
+
 #### Video Demo: ><><><
+
+
 
 #### Description:
 
@@ -9,6 +12,8 @@ File Snapshot Tracker is a local web application that records snapshots of a dir
 The application is designed for situations where a user wants a lightweight record of a project folder, study materials, or another local directory. Instead of continuously monitoring a computer in the background, it uses manual scans. A user registers a local directory path, runs a scan when desired, and the application saves a snapshot of the files that were accessible at that moment. Later scans can be compared with previous snapshots to identify added, modified, renamed, and deleted files.
 
 This is intentionally a local-only tool. It runs through Flask on the user's own computer and stores its data in a local SQLite database. The application does not upload the registered directory or file contents to an external server. Only file metadata and SHA-256 hashes are stored in the tracker database.
+
+
 
 ## Features
 
@@ -27,6 +32,8 @@ The main features of File Snapshot Tracker are:
 - Display an all-recorded-events timeline across every consecutive scan.
 - Export full scan history and change history as CSV and JSON files.
 - Provide a styled web interface for registered directories, comparisons, history, and exports.
+
+
 
 ## How It Works
 
@@ -49,6 +56,8 @@ The application also provides two different ways to inspect history:
 2. **View all recorded events** compares every consecutive pair of snapshots from the first scan to the latest scan. This preserves intermediate events, such as a file being modified and later deleted.
 
 The second option is important because a final-state comparison cannot show every event that happened in the middle of a long time range. For example, a file may be created, renamed, modified, and deleted before the final snapshot. Comparing only the first and final snapshots would not contain enough information to reconstruct every intermediate event.
+
+
 
 ## Project Files
 
@@ -104,11 +113,15 @@ The `templates` directory contains the Jinja HTML templates for the web interfac
 
 `requirements.txt` lists the Python packages required to run the project, including Flask and its dependencies.
 
+
+
 ## Rename Detection Design Decision
 
 The application detects a possible rename by matching the SHA-256 hash of a newly added file with the hash of a deleted file between two consecutive snapshots. If the file content is unchanged, the application can classify the event as `Renamed`.
 
 However, if a file is renamed and its content is modified before the next scan, its SHA-256 hash also changes. In that case, the application cannot reliably prove that the new file is the same file under a new name. It therefore reports one `Removed` event and one `Added` event instead of `Renamed`.
+
+
 
 
 ## Limitations and Platform Permissions
@@ -117,13 +130,15 @@ Because this is a local filesystem application, it can only scan paths that the 
 
 A directory containing no accessible files may appear to contain zero files if the operating system prevents access. The application does not bypass operating-system permissions.
 
+
+
 ## Installation and Usage
 
-### 1. Clone this Repository
+1. Clone this Repository
 
-### 2. Open the terminal of the downloaded folder
+2. Open the terminal of the downloaded folder
 
-### 3. Create and activate a Python virtual environment:
+3. Create and activate a Python virtual environment:
 
 ```bash
 python3 -m venv .venv
@@ -148,6 +163,8 @@ Then open the local address shown in the terminal, normally:
 http://127.0.0.1:5000
 ```
 
+
+
 ## To use the application:
 
 1. Enter a local directory path and an optional label.
@@ -157,6 +174,8 @@ http://127.0.0.1:5000
 5. Run another scan.
 6. Open **View latest changes**, **View scan history**, or **View all recorded events**.
 7. Download CSV or JSON exports if desired.
+
+
 
 ## AI Assistance Disclosure (Harvard CS50x - Final Project)
 
