@@ -1,6 +1,15 @@
 from database import get_connection
 
 
+def file_has_changed(previous, latest):
+    if previous["sha256"] and latest["sha256"]:
+        return previous["sha256"] != latest["sha256"]
+
+    return (
+        previous["size_bytes"] != latest["size_bytes"]
+        or previous["modified_at"] != latest["modified_at"]
+    )
+
 def compare_latest_snapshots(directory_id):
     connection = get_connection()
 
@@ -22,7 +31,7 @@ def compare_latest_snapshots(directory_id):
     previous_entries = {
         row["relative_path"]: dict(row)
         for row in connection.execute("""
-            SELECT relative_path, size_bytes, modified_at
+            SELECT relative_path, size_bytes, modified_at, sha256
             FROM file_entries
             WHERE snapshot_id = ?
         """, (previous_snapshot["id"],)).fetchall()
@@ -31,7 +40,7 @@ def compare_latest_snapshots(directory_id):
     latest_entries = {
         row["relative_path"]: dict(row)
         for row in connection.execute("""
-            SELECT relative_path, size_bytes, modified_at
+            SELECT relative_path, size_bytes, modified_at, sha256
             FROM file_entries
             WHERE snapshot_id = ?
         """, (latest_snapshot["id"],)).fetchall()
@@ -59,10 +68,7 @@ def compare_latest_snapshots(directory_id):
                 "size_bytes": previous["size_bytes"]
             })
 
-        elif (
-            previous["size_bytes"] != latest["size_bytes"]
-            or previous["modified_at"] != latest["modified_at"]
-        ):
+        elif file_has_changed(previous, latest):
             changes.append({
                 "status": "Modified",
                 "path": path,

@@ -1,10 +1,23 @@
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
 
+def calculate_sha256(file_path: Path):
+    hasher = hashlib.sha256()
+
+    with file_path.open("rb") as file:
+        chunk = file.read(65536)
+
+        while chunk:
+            hasher.update(chunk)
+            chunk = file.read(65536)
+
+    return hasher.hexdigest()
+
+
 def scan_directory(directory_path: Path):
     entries = []
-
 
     for file_path in directory_path.rglob("*"):
         try:
@@ -12,6 +25,7 @@ def scan_directory(directory_path: Path):
                 continue
 
             file_stat = file_path.stat()
+            file_hash = calculate_sha256(file_path)
 
         except OSError:
             continue
@@ -23,6 +37,7 @@ def scan_directory(directory_path: Path):
                 file_stat.st_mtime,
                 tz=timezone.utc
             ).isoformat(),
+            "sha256": file_hash,
         })
 
     return entries

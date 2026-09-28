@@ -101,7 +101,7 @@ def scan_registered_directory(directory_id):
             entry["relative_path"],
             entry["size_bytes"],
             entry["modified_at"],
-            None
+            entry["sha256"]
         )
         for entry in entries
     ])
