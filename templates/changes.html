@@ -32,7 +32,13 @@
                 {% for change in comparison["changes"] %}
                     <tr>
                         <td>{{ change["status"] }}</td>
-                        <td>{{ change["path"] }}</td>
+                        <td>
+                            {% if change["status"] == "Renamed" %}
+                                {{ change["old_path"] }} → {{ change["path"] }}
+                            {% else %}
+                                {{ change["path"] }}
+                            {% endif %}
+                        </td>
                         <td>{{ change["size_bytes"] }}</td>
                     </tr>
                 {% endfor %}
