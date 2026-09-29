@@ -4,7 +4,7 @@
   <img
     src="assets/001.png"
     alt="File Snapshot Tracker project cover"
-    width="900"
+    width="700"
   >
 </p>
 
@@ -188,3 +188,14 @@ http://127.0.0.1:5000
 ## AI Assistance Disclosure (Harvard CS50x - Final Project)
 
 AI assistance was used as a learning aid during development. In particular, the initial Flask route structure and SQLite interaction structure were developed with AI assistance like ChatGPT, then reviewed, tested, and adapted by the author. The final design decisions, implementation, testing, and documentation were completed and verified by the author.
+
+
+## Certificate
+
+<p align="center">
+  <img
+    src="assets/CS50x.png"
+    alt="Certificate"
+    width="700"
+  >
+</p>
